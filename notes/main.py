@@ -7,10 +7,6 @@ from .schema import NoteCreate, NoteUpdate
 
 notes_router = APIRouter()
 
-@notes_router.get("/", status_code=200)
-async def Home(request: Request):
-    return 'Welcome to the Notes App'
-
 @notes_router.get("/notes/all")
 async def read_notes(limit: int = Query(10, ge=1, le=100), 
                      offset: int = Query(0, ge=0), 
