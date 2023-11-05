@@ -3,7 +3,7 @@ import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 import argparse
-from routers.notes import notes_router
+from notes.main import notes_router
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--port", default=8000, type=int)
