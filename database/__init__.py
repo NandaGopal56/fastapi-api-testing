@@ -1,2 +1,2 @@
 from database.base import Base
-from .notes import Note
+from .models import Note
