@@ -3,58 +3,49 @@ from fastapi import Request
 from sqlalchemy.orm import Session
 from database.base import get_db
 from database.models import Note
-from .schema import NoteCreate, NoteUpdate
+from exceptions.main import NotFoundError
+from .schema import NoteSchema, NotesList, NoteCreate, NoteUpdate
+from .db_operations import db_read_item, db_create_note, db_update_note, db_delete_note, db_read_all_items
+
 
 notes_router = APIRouter()
 
-@notes_router.get("/notes/all")
-async def read_notes(limit: int = Query(10, ge=1, le=100), 
+@notes_router.get("/notes/all", response_model=NotesList)
+async def get_all_notes(limit: int = Query(10, ge=1, le=100), 
                      offset: int = Query(0, ge=0), 
                      db: Session = Depends(get_db)):
-    notes = db.query(Note).offset(offset).limit(limit).all()
+    notes = db_read_all_items(limit, offset, db)
     return notes
 
 
-@notes_router.get("/notes/{note_id}")
-async def read_note(note_id: int, db: Session = Depends(get_db)):
-    note = db.query(Note).filter(Note.id == note_id).first()
-
-    if note is None:
+@notes_router.get("/notes/{note_id}", response_model=NoteSchema)
+async def get_a_note(note_id: int, db: Session = Depends(get_db)):
+    try:
+        note = db_read_item(note_id, db)
+    except NotFoundError:
         raise HTTPException(status_code=404, detail="Note not found")
-    
-    return note
 
+    return note
 
 @notes_router.post("/notes/", response_model=NoteCreate)
 async def create_note(note: NoteCreate, db: Session = Depends(get_db)):
-    new_note = Note(**note.model_dump())  # Convert Pydantic model to SQLAlchemy model
-    db.add(new_note)
-    db.commit()
-    db.refresh(new_note)
+    new_note = db_create_note(note, db)
     return new_note
 
 @notes_router.put("/notes/{note_id}", response_model=NoteUpdate)
 def update_note(note_id: int, note_update: NoteUpdate, db: Session = Depends(get_db)):
-    existing_note = db.query(Note).filter(Note.id == note_id).first()
-
-    if existing_note is None:
+    try:
+        updated_note = db_update_note(note_id, note_update, db)
+    except NotFoundError:
         raise HTTPException(status_code=404, detail="Note not found")
 
-    for key, value in note_update.model_dump().items():
-        setattr(existing_note, key, value)
-
-    db.commit()
-    db.refresh(existing_note)
-
-    return note_update
+    return updated_note
 
 @notes_router.delete("/notes/{note_id}")
 def delete_note(note_id: int, db: Session = Depends(get_db)):
-    note = db.query(Note).filter(Note.id == note_id).first()
-    if not note:
+    try:
+        status = db_delete_note(note_id, db)
+    except NotFoundError:
         raise HTTPException(status_code=404, detail="Note not found")
     
-    db.delete(note)
-    db.commit()
-    
-    return {"message": "Note deleted successfully"}
+    return status
