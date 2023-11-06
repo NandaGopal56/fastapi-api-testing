@@ -31,5 +31,5 @@ testClient = TestClient(app)
 def test_main_home():
     response = testClient.get("/")
     assert response.status_code == 200
-    assert response.json() == 'Welcome to the Notes Appx'
+    assert response.json() == 'Welcome to the Notes App'
 
