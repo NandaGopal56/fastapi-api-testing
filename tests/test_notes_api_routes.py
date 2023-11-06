@@ -9,10 +9,6 @@ def teardown() -> None:
     # Drop the tables in the test database
     Base.metadata.drop_all(bind=test_engine)
 
-###############################################
-#           TESTS
-###############################################
-
 def test_create_note():
     response = testClient.post(
         "/notes/", json={
@@ -37,7 +33,7 @@ def test_get_note():
     assert data['title'] == 'pytest note title'
     assert data['content'] == 'pytest note Content'
 
-def update_get_note():
+def test_update_get_note():
     response = testClient.put("/notes/1", json={
                 "title": "pytest note title updated",
                 "content": "pytest note Content updated"
@@ -47,7 +43,7 @@ def update_get_note():
     assert data['title'] == 'pytest note title updated'
     assert data['content'] == 'pytest note Content updated'
 
-def delete_a_note():
+def test_delete_a_note():
     response = testClient.delete("/notes/1")
     assert response.status_code == 200
     data = response.json()
